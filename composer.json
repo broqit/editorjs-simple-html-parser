@@ -1,5 +1,5 @@
 {
-    "name": "edd-g/editorjs-simple-html-parser",
+    "name": "broqit/editorjs-simple-html-parser",
     "type": "library",
     "description": "A simple Json to Html parser for EditorJS library",
     "minimum-stability": "dev",
@@ -17,7 +17,7 @@
         "test": "vendor/bin/phpunit tests/ --coverage-clover=coverage.xml"
     },
     "require": {
-        "php": ">=7.3",
+        "php": ">=8.1",
         "ext-dom": "*",
         "ext-json": "*",
         "masterminds/html5": "^2.7@dev"
