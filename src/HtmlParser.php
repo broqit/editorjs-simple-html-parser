@@ -528,7 +528,7 @@ class HtmlParser
 		$stretched = in_array('stretched', $styles) ? true : false;
 
 		$block['type'] = 'image';
-		$block['data']['url'] = $node->getElementsByTagName('img')->item(0)->getAttribute('src');
+		$block['data']['url'] = $node->getElementsByTagName('img')->item(0)?->getAttribute('src');
 		$block['data']['caption'] = $this->setInnerHtml($node->getElementsByTagName('figcaption')->item(0));
 		$block['data']['withBorder'] = $withBorder;
 		$block['data']['withBackground'] = $withBackground;
