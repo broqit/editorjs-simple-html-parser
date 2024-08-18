@@ -29,7 +29,7 @@ Package | Key | Main CSS Class<br>(with default prefix) | Additional / modificat
 ## Installation
 
 ```
-composer require edd-g/editorjs-simple-html-parser
+composer require broqit/editorjs-simple-html-parser
 ```
 ## 1. JSON to HTML Parser
 
