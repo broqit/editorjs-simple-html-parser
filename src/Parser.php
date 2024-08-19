@@ -12,7 +12,7 @@ class Parser
      * @var Config
      */
     protected $config;
-    
+
     /**
      * @var StdClass
      */
@@ -116,7 +116,7 @@ class Parser
     protected function addClass($type, $alignment = false, $style = false)
     {
         $class[] = $this->prefix.'-'.$type;
-        
+
         if ($alignment) {
             $class[] = $this->prefix.'_'.$alignment;
         }
@@ -125,9 +125,9 @@ class Parser
             $styles = explode(' ', $style);
             foreach ($styles as $v) {
                 $class[] = $this->prefix.'_'.$v;
-            }            
+            }
         }
-        
+
         return implode(' ', $class);
     }
 
@@ -192,7 +192,7 @@ class Parser
     private function parseEmbed($block)
     {
         $figure = $this->dom->createElement('figure');
-        
+
         $class = $this->addClass($block->type, false, $block->data->service);
 
         $figure->setAttribute('class', $class);
@@ -344,9 +344,9 @@ class Parser
 
         $img = $this->dom->createElement('img');
 
-        $img->setAttribute('src', $block->data->url);
+        $img->setAttribute('src', $block->data->file->url ?? '');
         $img->setAttribute('alt', $caption);
-        
+
         $figure->appendChild($img);
 
         if (!empty($caption)) {
@@ -378,9 +378,9 @@ class Parser
 
         $img = $this->dom->createElement('img');
 
-        $img->setAttribute('src', $block->data->url);
+        $img->setAttribute('src', $block->data->url ?? '');
         $img->setAttribute('alt', $caption);
-        
+
         $figure->appendChild($img);
 
         if (!empty($caption)) {
@@ -470,7 +470,7 @@ class Parser
         $link->setAttribute('target', '_blank');
 
         $img = $this->dom->createElement('img');
-        $img->setAttribute('src', $block->data->meta->image->url);
+        $img->setAttribute('src', $block->data->meta->image->url ?? '');
         $img->setAttribute('alt', '');
 
         $link->appendChild($img);
