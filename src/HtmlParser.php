@@ -148,14 +148,14 @@ class HtmlParser
 			$classList = array_key_exists('class', $nodeAttr) ? explode(' ', $nodeAttr['class']) : [];
 
 			$prefixClass = $this->getPrefix();
-			
+
 			// Get block type from class name
 			$blockType = array_values(array_filter($classList, function($class) use($prefixClass) {
 				if (0 === strpos($class, $prefixClass.'-')) {
 					return true;
 				}
 			}));
-			
+
 			$blockType = isset($blockType[0]) ? explode('-', $blockType[0])[1] : null;
 
 			// Styles / Tunes list from class name
@@ -172,7 +172,7 @@ class HtmlParser
 			// Call block parse function
 			$method = isset($blockType) ? 'parse'.ucfirst($blockType) : '';
 			if (method_exists($this, $method)) {
-				$data = $this->{$method}($node, $styles);				
+				$data = $this->{$method}($node, $styles);
 				array_push($this->blocks, $data);
 			}
 			else if (!empty($method)) {
@@ -188,14 +188,14 @@ class HtmlParser
 
     /**
 	 * Nodes by class name
-	 * 
+	 *
 	 * @param object $parentNode where find elements
 	 * @param string $tagName
 	 * @param string $className
 	 * @return array
 	 */
 	private function getElementsByClass(&$parentNode, $tagName, $className) {
-		
+
 		$nodes = [];
 
 		$childNodeList = $parentNode->getElementsByTagName($tagName);
@@ -212,7 +212,7 @@ class HtmlParser
 
     /**
 	 * Prepare block value
-	 * 
+	 *
 	 * @param object $node
 	 * @return string
 	 */
@@ -228,13 +228,13 @@ class HtmlParser
 		} else {
 			$innerHTML .= (isset($node->nodeValue)) ? $node->nodeValue : '';
 		}
-		
+
 		return $innerHTML;
 	}
 
 	/**
 	 * Get alignment from class name
-	 * 
+	 *
 	 * @param array $styles
 	 * @return string
 	 */
@@ -249,46 +249,46 @@ class HtmlParser
 
     /**
 	 * Header Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
 	 */
 	private function parseHeader($node, $styles) {
-		
+
 		$block['type'] = 'header';
 		$block['data']['text'] = $this->setInnerHtml($node);
 		$block['data']['level'] = ltrim($node->tagName, $node->tagName[0]);
 		$block['data']['alignment'] = $this->setAlignment($styles);
-		
+
 		return $block;
 	}
 
 	/**
 	 * Paragraph Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
 	 */
 	private function parseParagraph($node, $styles) {
-		
+
 		$block['type'] = 'paragraph';
 		$block['data']['text'] = $this->setInnerHtml($node);
 		$block['data']['alignment'] = $this->setAlignment($styles);
-		
+
 		return $block;
 	}
 
 	/**
 	 * List Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
 	 */
 	private function parseList($node, $styles) {
-		
+
 		$style = in_array('ordered', $styles) ? 'ordered' : 'unordered';
 
 		foreach ($node->childNodes as $childNode) {
@@ -300,13 +300,13 @@ class HtmlParser
 		$block['type'] = 'list';
 		$block['data']['style'] = $style;
 		$block['data']['items'] = $items;
-		
+
 		return $block;
 	}
 
 	/**
 	 * Raw HTML Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -315,13 +315,13 @@ class HtmlParser
 
 		$block['type'] = 'raw';
 		$block['data']['html'] = $this->setInnerHtml($node);
-		
+
 		return $block;
 	}
 
 	/**
 	 * LinkTool Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -343,13 +343,13 @@ class HtmlParser
 		$block['data']['meta']['image']['url'] = $node->getElementsByTagName('img')->item(0)->getAttribute('src');
 		$block['data']['meta']['title'] = $title;
 		$block['data']['meta']['description'] = $description;
-		
+
 		return $block;
 	}
 
 	/**
 	 * Delimiter Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -358,13 +358,13 @@ class HtmlParser
 
 		$block['type'] = 'delimiter';
 		$block['data'] = [];
-		
+
 		return $block;
 	}
 
 	/**
 	 * Alert Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -388,13 +388,13 @@ class HtmlParser
 		$block['data']['type'] = $dataType;
 		$block['data']['align'] = $this->setAlignment($styles);
 		$block['data']['message'] = $this->setInnerHtml($node);
-		
+
 		return $block;
 	}
 
 	/**
 	 * Table Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -434,14 +434,14 @@ class HtmlParser
 
 		$block['type'] = 'table';
 		$block['data']['withHeadings'] = $withHeadings;
-		$block['data']['content'] = $trs;    
-		
+		$block['data']['content'] = $trs;
+
 		return $block;
 	}
 
 	/**
 	 * Code Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -450,13 +450,13 @@ class HtmlParser
 
 		$block['type'] = 'code';
 		$block['data']['code'] = $node->getElementsByTagName('code')->item(0)->nodeValue;
-		
+
 		return $block;
 	}
 
 	/**
 	 * Quote Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -467,13 +467,13 @@ class HtmlParser
 		$block['data']['text'] = $this->setInnerHtml($node->getElementsByTagName('blockquote')->item(0));
 		$block['data']['caption'] = $this->setInnerHtml($node->getElementsByTagName('figcaption')->item(0));
 		$block['data']['alignment'] = $this->setAlignment($styles);
-		
+
 		return $block;
 	}
 
 	/**
 	 * Embed Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -510,13 +510,13 @@ class HtmlParser
 		$block['data']['width'] = $node->getElementsByTagName('iframe')->item(0)->getAttribute('width');
 		$block['data']['height'] = $node->getElementsByTagName('iframe')->item(0)->getAttribute('height');
 		$block['data']['caption'] = $this->setInnerHtml($node->getElementsByTagName('figcaption')->item(0));
-		
+
 		return $block;
 	}
 
 	/**
 	 * Image Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -528,18 +528,18 @@ class HtmlParser
 		$stretched = in_array('stretched', $styles) ? true : false;
 
 		$block['type'] = 'image';
-		$block['data']['url'] = $node->getElementsByTagName('img')->item(0)?->getAttribute('src');
+		$block['data']['file']['url'] = $node->getElementsByTagName('img')->item(0)?->getAttribute('src');
 		$block['data']['caption'] = $this->setInnerHtml($node->getElementsByTagName('figcaption')->item(0));
 		$block['data']['withBorder'] = $withBorder;
 		$block['data']['withBackground'] = $withBackground;
 		$block['data']['stretched'] = $stretched;
-		
+
 		return $block;
 	}
 
 	/**
 	 * Warning Parser
-	 * 
+	 *
 	 * @param object $node
 	 * @param array $styles
 	 * @return array
@@ -549,8 +549,8 @@ class HtmlParser
 		$block['type'] = 'warning';
 		$block['data']['title'] = $node->getElementsByTagName('h4')->item(0)->nodeValue;
 		$block['data']['message'] = $node->getElementsByTagName('p')->item(0)->nodeValue;
-		
+
 		return $block;
 	}
 
-} 
+}
