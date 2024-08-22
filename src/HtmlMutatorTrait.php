@@ -7,93 +7,228 @@ trait HtmlMutatorTrait
     protected static function htmlMutator(&$state): void
     {
         $state = str_replace('</img>', '', $state);
-
-        $state = preg_replace_callback(
-            '/<(p|figure)[^>]*>(<img[^>]*>(<figcaption[^>]*>.*?<\/figcaption>)?)<\/(p|figure)>/',
-            function ($matches) {
-                $img = $matches[2];
-                $figcaption = isset($matches[3]) ? $matches[3] : '';
-
-                // Extract the title and alt attribute from the img tag.
-                preg_match('/title=["\'](.*?)["\']/', $img, $titleMatches);
-                $title = $titleMatches[1] ?? '';
-                preg_match('/alt=["\'](.*?)["\']/', $img, $altMatches);
-                $alt = $altMatches[1] ?? '';
-
-                // If figcaption doesn't exist and title exists, create figcaption from title
-                if (empty($figcaption) && !empty($title)) {
-                    $figcaption = "<figcaption>{$title}</figcaption>";
-                } elseif (empty($figcaption) && !empty($alt)) { // If figcaption and title don't exist, create figcaption from alt
-                    $figcaption = "<figcaption>{$alt}</figcaption>";
-                }
-
-                // Ensure the figure tag has the necessary classes
-                $desiredTag = 'figure class="prs-image prs_stretched"';
-
-                return sprintf(
-                    '<%s>%s%s</%s>',
-                    $desiredTag,
-                    $img,
-                    $figcaption,
-                    'figure'
-                );
-            },
-            $state
-        );
-
-        $state = preg_replace_callback(
-            '/<(p|figure)[^>]*>(<iframe[^>]*><\/iframe>(<figcaption[^>]*>.*?<\/figcaption>)?)<\/(p|figure)>/',
-            function ($matches) {
-                $iframe = $matches[2];
-                $figcaption = isset($matches[3]) ? $matches[3] : '';
-
-                // Extract attributes from the iframe tag.
-                preg_match('/title=["\'](.*?)["\']/', $iframe, $titleMatches);
-                $title = $titleMatches[1] ?? '';
-
-                preg_match('/src=["\'](.*?)["\']/', $iframe, $srcMatches);
-                $src = $srcMatches[1] ?? '';
-
-                preg_match('/alt=["\'](.*?)["\']/', $iframe, $altMatches);
-                $alt = $altMatches[1] ?? '';
-
-                $htmlParser = new HtmlParser($iframe);
-                $service = $htmlParser->getServiceNameFromUrl($src);
-
-                // If figcaption doesn't exist and title exists, create figcaption from title
-                if (empty($figcaption) && !empty($title)) {
-                    $figcaption = "<figcaption>{$title}</figcaption>";
-                } elseif (empty($figcaption) && !empty($alt)) { // If figcaption and title don't exist, create figcaption from alt
-                    $figcaption = "<figcaption>{$alt}</figcaption>";
-                }
-
-                // Ensure the figure tag has the necessary classes
-                $desiredTag = sprintf('figure class="prs-embed prs_%s"', $service);
-
-                return sprintf(
-                    '<%s>%s%s</%s>',
-                    $desiredTag,
-                    $iframe,
-                    $figcaption,
-                    'figure'
-                );
-            },
-            $state
-        );
-
-        self::replaceHtmlTagWithClass($state, '<h2>', '<h2 class="prs-header">');
-        self::replaceHtmlTagWithClass($state, '<h3>', '<h3 class="prs-header">');
-        self::replaceHtmlTagWithClass($state, '<h4>', '<p class="prs-header">');
-        self::replaceHtmlTagWithClass($state, '<h5>', '<p class="prs-header">');
-        self::replaceHtmlTagWithClass($state, '<ul>', '<div class="prs-list"><ul');
-        self::replaceHtmlTagWithClass($state, '<ol>', '<div class="prs-list"><ol');
-        self::replaceHtmlTagWithClass($state, '</ul>', '</ul></div>');
-        self::replaceHtmlTagWithClass($state, '</ol>', '</ol></div>');
-        self::replaceHtmlTagWithClass($state, '<p>', '<p class="prs-paragraph">');
+        
+        // Встановлюємо правильне кодування UTF-8
+        $html = mb_convert_encoding($state, 'HTML-ENTITIES', 'UTF-8');
+        
+        // Завантажуємо HTML у DOMDocument з правильним кодуванням
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($html, LIBXML_NOERROR | LIBXML_NOWARNING);
+        
+        // Мутація заголовків
+        self::mutateHeadings($dom);
+            
+        // Мутація параграфів
+        self::mutateParagraphs($dom);
+            
+        // Мутація таблиць
+        self::mutateTable($dom);
+            
+        // Мутація списків
+        self::mutateLists($dom);
+            
+        // Мутація iframe
+        self::mutateIframes($dom);
+            
+        // Мутація зображень
+        self::mutateImages($dom);
+        
+        // Отримуємо вміст без <doctype>, <html>, <head> та <body>
+        $bodyContent = '';
+        foreach ($dom->getElementsByTagName('body')->item(0)->childNodes as $child) {
+            $bodyContent .= $dom->saveHTML($child);
+        }
+        
+        dd($bodyContent);
+        // Повертаємо лише змінений вміст
+        $state = $bodyContent;
     }
-
-    private static function replaceHtmlTagWithClass(&$state, string $tag, string $replacement): void
+    
+    private static function mutateTable($dom)
     {
-        $state = str_replace($tag, $replacement, $state);
+        // Отримуємо tbody
+        $tbody = $dom->getElementsByTagName('tbody')->item(0);
+        if (!$tbody) {
+            return; // Якщо tbody не існує, просто виходимо з функції
+        }
+    
+        // Отримуємо перший рядок з tbody
+        $firstRow = $tbody->getElementsByTagName('tr')->item(0);
+        if (!$firstRow) {
+            return; // Якщо немає рядків, просто виходимо з функції
+        }
+    
+        // Перевіряємо, чи перший рядок має елементи <th>
+        $hasTh = $firstRow->getElementsByTagName('th')->length > 0;
+    
+        // Якщо є <th> у першому рядку і немає <thead>, створюємо thead
+        if ($hasTh && $dom->getElementsByTagName('thead')->length == 0) {
+            $thead = $dom->createElement('thead');
+            $tbody->parentNode->insertBefore($thead, $tbody);
+            $thead->appendChild($firstRow);
+        }
+        
+        // Отримуємо елемент <table> та додаємо клас 'prs-table'
+        $table = $dom->getElementsByTagName('table')->item(0);
+        if ($table) {
+            $existingClass = $table->getAttribute('class');
+            $table->setAttribute('class', trim($existingClass . ' prs-table'));
+        }
+    }
+    
+    private static function mutateParagraphs($dom)
+    {
+        // Отримуємо всі елементи <p>
+        $paragraphs = $dom->getElementsByTagName('p');
+        
+        // Додаємо клас до кожного параграфа
+        foreach ($paragraphs as $paragraph) {
+            $existingClass = $paragraph->getAttribute('class');
+            $paragraph->setAttribute('class', trim($existingClass . ' prs-paragraph'));
+        }
+    }
+    
+    private static function mutateHeadings($dom)
+    {
+        // Список заголовків для модифікації
+        $headings = ['h2', 'h3', 'h4', 'h5', 'h6'];
+    
+        // Додаємо клас до кожного заголовка
+        foreach ($headings as $heading) {
+            $elements = $dom->getElementsByTagName($heading);
+            foreach ($elements as $element) {
+                $existingClass = $element->getAttribute('class');
+                $element->setAttribute('class', trim($existingClass . ' prs-header'));
+            }
+        }
+    }
+    
+    private static function mutateLists($dom)
+    {
+        // Список типів списків для модифікації
+        $listTags = ['ul', 'ol'];
+    
+        // Додаємо клас до кожного списку
+        foreach ($listTags as $tag) {
+            $elements = $dom->getElementsByTagName($tag);
+            foreach ($elements as $element) {
+                $existingClass = $element->getAttribute('class');
+                $element->setAttribute('class', trim($existingClass . ' prs-nested-list'));
+            }
+        }
+    }
+    
+    private static function mutateIframes($dom)
+    {
+        // Отримуємо всі елементи <iframe>
+        $iframes = $dom->getElementsByTagName('iframe');
+    
+        // Створюємо масив, щоб зберегти елементи для подальшої обробки
+        $toProcess = [];
+    
+        // Перебираємо всі <iframe>
+        foreach ($iframes as $iframe) {
+            $toProcess[] = $iframe;
+        }
+    
+        foreach ($toProcess as $iframe) {
+            // Витягуємо батьківський елемент iframe
+            $parentNode = $iframe->parentNode;
+    
+            // Витягуємо атрибути iframe
+            $title = $iframe->getAttribute('title');
+            $src = $iframe->getAttribute('src');
+            $alt = $iframe->getAttribute('alt');
+    
+            // Визначаємо сервіс на основі URL
+            $htmlParser = new HtmlParser($iframe->ownerDocument->saveHTML($iframe));
+            $service = $htmlParser->getServiceNameFromUrl($src);
+    
+            // Генеруємо figcaption, якщо це необхідно
+            $figcaption = null;
+            if ($parentNode->nodeName === 'figure') {
+                $figcaption = $parentNode->getElementsByTagName('figcaption')->item(0);
+            }
+    
+            if (!$figcaption && $title) {
+                $figcaption = $dom->createElement('figcaption', $title);
+            } elseif (!$figcaption && $alt) {
+                $figcaption = $dom->createElement('figcaption', $alt);
+            }
+    
+            // Створюємо новий елемент figure
+            $figure = $dom->createElement('figure');
+            $figure->setAttribute('class', "prs-embed prs_$service");
+    
+            // Переміщуємо iframe у figure
+            $figure->appendChild($iframe);
+    
+            // Якщо є figcaption, додаємо його до figure
+            if ($figcaption) {
+                $figure->appendChild($figcaption);
+            }
+    
+            // Замість батьківського елемента вставляємо figure
+            if (in_array($parentNode->nodeName, ['p', 'div', 'figure'])) {
+                $parentNode->parentNode->replaceChild($figure, $parentNode);
+            } else {
+                $parentNode->replaceChild($figure, $iframe);
+            }
+        }
+    }
+    
+    private static function mutateImages($dom)
+    {
+        // Отримуємо всі елементи <img>
+        $images = $dom->getElementsByTagName('img');
+    
+        // Створюємо масив, щоб зберегти елементи для подальшої обробки
+        $toProcess = [];
+    
+        // Перебираємо всі <img>
+        foreach ($images as $img) {
+            $toProcess[] = $img;
+        }
+    
+        foreach ($toProcess as $img) {
+            // Витягуємо атрибути title і alt з тега <img>
+            $title = $img->getAttribute('title');
+            $alt = $img->getAttribute('alt');
+    
+            // Визначаємо батьківський елемент
+            $parentNode = $img->parentNode;
+    
+            // Генеруємо figcaption, якщо це необхідно
+            $figcaption = null;
+            if ($parentNode->nodeName === 'figure') {
+                $figcaptionNode = $parentNode->getElementsByTagName('figcaption')->item(0);
+                $figcaption = $figcaptionNode ? $figcaptionNode->textContent : null;
+            }
+    
+            if (!$figcaption && $title) {
+                $figcaption = $dom->createElement('figcaption', $title);
+            } elseif (!$figcaption && $alt) {
+                $figcaption = $dom->createElement('figcaption', $alt);
+            }
+    
+            // Створюємо новий елемент figure
+            $figure = $dom->createElement('figure');
+            $figure->setAttribute('class', "prs-image prs_stretched");
+    
+            // Переміщуємо img у figure
+            $figure->appendChild($img);
+    
+            // Якщо є figcaption, додаємо його до figure
+            if ($figcaption) {
+                $figure->appendChild($figcaption);
+            }
+    
+            // Замість батьківського елемента вставляємо figure
+            if (in_array($parentNode->nodeName, ['p', 'div', 'figure'])) {
+                $parentNode->parentNode->replaceChild($figure, $parentNode);
+            } else {
+                $parentNode->replaceChild($figure, $img);
+            }
+        }
     }
 }
