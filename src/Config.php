@@ -14,7 +14,7 @@ class Config
      */
     private $version = "2.28.2";
 
-    private $needMutation = false;
+    private $needMutation = true;
 
     public function isNeedMutation(): bool
     {
