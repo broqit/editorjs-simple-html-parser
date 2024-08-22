@@ -8,7 +8,7 @@ use DomXPath;
 class HtmlParser
 {
     use HtmlMutatorTrait;
-    
+
     /**
      * @var Config
      */
@@ -65,15 +65,15 @@ class HtmlParser
         'github.com' => 'github'
     ];
 
-    public function __construct(string $html, $needMutations = false)
+    public function __construct(string $html)
     {
     	$this->config = new Config();
 
     	if (empty($html)) {
             throw new ParserException('Empty HTML !');
         }
-        
-        if ($needMutations) {
+
+        if ($this->config->isNeedMutation()) {
             $this->htmlMutator($html);
         }
 
