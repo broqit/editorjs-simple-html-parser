@@ -32,6 +32,12 @@ trait HtmlMutatorTrait
             
         // Мутація зображень
         self::mutateImages($dom);
+            
+        // Мутація спойлерів
+        //self::mutateDetails($dom);
+        
+        // Мутація цитат
+        //self::mutateBlockquotes($dom);
         
         // Отримуємо вміст без <doctype>, <html>, <head> та <body>
         $bodyContent = '';
@@ -39,6 +45,7 @@ trait HtmlMutatorTrait
             $bodyContent .= $dom->saveHTML($child);
         }
         
+        dd($bodyContent);
         // Повертаємо лише змінений вміст
         $state = $bodyContent;
     }
@@ -227,6 +234,76 @@ trait HtmlMutatorTrait
                 $parentNode->parentNode->replaceChild($figure, $parentNode);
             } else {
                 $parentNode->replaceChild($figure, $img);
+            }
+        }
+    }
+    
+    private static function mutateDetails($dom)
+    {
+        // Отримуємо всі елементи <details>
+        $detailsElements = $dom->getElementsByTagName('details');
+    
+        // Створюємо масив, щоб зберегти елементи для подальшої обробки
+        $toProcess = [];
+    
+        // Перебираємо всі <details>
+        foreach ($detailsElements as $details) {
+            // Перевіряємо, чи містить <details> тег <summary>
+            $summary = $details->getElementsByTagName('summary')->item(0);
+    
+            // Перевіряємо, чи містить <details> тег <div data-type="details-content">
+            $detailsContent = null;
+            $divs = $details->getElementsByTagName('div');
+            foreach ($divs as $div) {
+                if ($div->getAttribute('data-type') === 'details-content') {
+                    $detailsContent = $div;
+                    break;
+                }
+            }
+    
+            // Якщо <details> містить обидва необхідні елементи, додаємо його до обробки
+            if ($summary && $detailsContent) {
+                $toProcess[] = $details;
+            }
+        }
+    
+        foreach ($toProcess as $details) {
+            // Додаємо клас "prs-spoiler" до <details>
+            $existingClass = $details->getAttribute('class');
+            $details->setAttribute('class', trim($existingClass . ' prs-spoiler'));
+    
+            // Додаємо клас до <div data-type="details-content">
+            $detailsContent = $details->getElementsByTagName('div')->item(0);
+            $existingDivClass = $detailsContent->getAttribute('class');
+            $detailsContent->setAttribute('class', trim($existingDivClass . ' prs-details-content'));
+        }
+    }
+    
+    private static function mutateBlockquotes($dom)
+    {
+        // Отримуємо всі елементи <blockquote>
+        $blockquotes = $dom->getElementsByTagName('blockquote');
+    
+        // Створюємо масив, щоб зберегти елементи для подальшої обробки
+        $toProcess = [];
+    
+        // Перебираємо всі <blockquote>
+        foreach ($blockquotes as $blockquote) {
+            $toProcess[] = $blockquote;
+        }
+    
+        foreach ($toProcess as $blockquote) {
+            // Додаємо клас "prs-quote" до blockquote
+            $existingClass = $blockquote->getAttribute('class');
+            $blockquote->setAttribute('class', trim($existingClass . ' prs-quote'));
+    
+            // Проходимо по всіх дочірніх елементах всередині <blockquote>
+            foreach ($blockquote->childNodes as $childNode) {
+                if ($childNode->nodeType === XML_ELEMENT_NODE) {
+                    // Додаємо клас "prs-quote-content" до кожного дочірнього елемента
+                    $existingChildClass = $childNode->getAttribute('class');
+                    $childNode->setAttribute('class', trim($existingChildClass . ' prs-quote-content'));
+                }
             }
         }
     }
