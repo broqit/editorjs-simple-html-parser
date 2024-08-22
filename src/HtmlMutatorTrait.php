@@ -39,7 +39,6 @@ trait HtmlMutatorTrait
             $bodyContent .= $dom->saveHTML($child);
         }
         
-        dd($bodyContent);
         // Повертаємо лише змінений вміст
         $state = $bodyContent;
     }
