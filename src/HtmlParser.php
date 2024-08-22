@@ -334,19 +334,45 @@ class HtmlParser
 	 * @return array
 	 */
 	private function parseList($node, $styles)
-    {
+	{
 		$style = in_array('ordered', $styles) ? 'ordered' : 'unordered';
-
+	
 		foreach ($node->childNodes as $childNode) {
 			if ($childNode->nodeType === XML_ELEMENT_NODE) {
 				$items[] = $childNode->nodeValue;
 			}
 		}
-
+		
 		$block['type'] = 'list';
 		$block['data']['style'] = $style;
 		$block['data']['items'] = $items;
-
+		
+		return $block;
+	}
+	
+	/**
+	 * List Parser
+	 *
+	 * @param object $node
+	 * @param array $styles
+	 * @return array
+	 */
+	private function parseNested($node, $styles)
+	{
+		$style = in_array('ordered', $styles) ? 'ordered' : 'unordered';
+	
+		foreach ($node->childNodes as $childNode) {
+			if ($childNode->nodeType === XML_ELEMENT_NODE) {
+				$items[] = [
+					'content' => $childNode->nodeValue
+				];
+			}
+		}
+		
+		$block['type'] = 'list';
+		$block['data']['style'] = $style;
+		$block['data']['items'] = $items;
+		
 		return $block;
 	}
 
