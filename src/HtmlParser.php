@@ -360,7 +360,8 @@ class HtmlParser
 	private function parseNested($node, $styles)
 	{
 		$style = in_array('ordered', $styles) ? 'ordered' : 'unordered';
-	
+		
+		$items = [];
 		foreach ($node->childNodes as $childNode) {
 			if ($childNode->nodeType === XML_ELEMENT_NODE) {
 				$items[] = [
