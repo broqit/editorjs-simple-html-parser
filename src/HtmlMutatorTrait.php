@@ -7,6 +7,8 @@ trait HtmlMutatorTrait
     protected function htmlMutator(&$state): void
     {
         $state = str_replace('</img>', '', $state);
+        $state = str_replace('<li><p>', '<li>', $state);
+        $state = str_replace('</p><li>', '</li>', $state);
         
         // Встановлюємо правильне кодування UTF-8
         $html = mb_convert_encoding($state, 'HTML-ENTITIES', 'UTF-8');
