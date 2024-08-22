@@ -42,6 +42,27 @@ class HtmlParser
      */
     private $version;
 
+    private array $services = [
+        'facebook.com' => 'facebook',
+        'instagram.com' => 'instagram',
+        'youtube.com' => 'youtube',
+        'twitter.com' => 'twitter',
+        'twitch.tv' => 'twitch-video',
+        'miro.com' => 'miro',
+        'vimeo.com' => 'vimeo',
+        'gfycat.com' => 'gfycat',
+        'imgur.com' => 'imgur',
+        'vine.co' => 'vine',
+        'aparat.com' => 'aparat',
+        'music.yandex.com' => 'yandex-music-track',
+        'music.yandex.com' => 'yandex-music-album',
+        'music.yandex.com' => 'yandex-music-playlist',
+        'coub.com' => 'coub',
+        'codepen.io' => 'codepen',
+        'pinterest.com' => 'pinterest',
+        'github.com' => 'github'
+    ];
+
     public function __construct(string $html)
     {
     	$this->config = new Config();
@@ -57,6 +78,22 @@ class HtmlParser
         $this->dom = new DOMDocument(1.0, 'UTF-8');
 
         $this->dom->loadHTML(mb_encode_numericentity($this->html, [0x80, 0x10FFFF, 0, ~0], 'UTF-8'), LIBXML_NOERROR);
+    }
+
+    public function getServiceNameFromUrl(string $url): string
+    {
+        $parsedUrl = parse_url($url);
+        $host = $parsedUrl['host'] ?? '';
+
+        if (!empty($host)) {
+            foreach ($this->services as $domain => $service) {
+                if (str_contains($host, $domain)) {
+                    return $service;
+                }
+            }
+        }
+
+        return ''; // Повертаємо порожній рядок, якщо сервіс не знайдено
     }
 
     static function parse(string $html)
@@ -129,14 +166,15 @@ class HtmlParser
      */
     private function init()
     {
-        if (!$this->hasHtml()) throw new ParserException('No HTML to parse !');
+        if (!$this->hasHtml()) {
+            throw new ParserException('No HTML to parse !');
+        }
 
         $finder = new DomXPath($this->dom);
 
 		$nodes = $finder->query("//*[contains(@class, '$this->prefix')]");
 
 		foreach ($nodes as $node) {
-
 			$nodeAttr = [];
 
 			if (isset($node->attributes)) {
@@ -183,7 +221,7 @@ class HtmlParser
 
     private function hasHtml()
     {
-        return (get_object_vars($this->dom)) !== FALSE;
+        return (get_object_vars($this->dom)) !== false;
     }
 
     /**
@@ -194,8 +232,8 @@ class HtmlParser
 	 * @param string $className
 	 * @return array
 	 */
-	private function getElementsByClass(&$parentNode, $tagName, $className) {
-
+	private function getElementsByClass(&$parentNode, $tagName, $className)
+    {
 		$nodes = [];
 
 		$childNodeList = $parentNode->getElementsByTagName($tagName);
@@ -216,8 +254,8 @@ class HtmlParser
 	 * @param object $node
 	 * @return string
 	 */
-	private function setInnerHtml($node) {
-
+	private function setInnerHtml($node)
+    {
 		$innerHTML = '';
 
 		// Check child elements exist
@@ -238,8 +276,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return string
 	 */
-	private function setAlignment($styles) {
-
+	private function setAlignment($styles)
+    {
 		$filter = ['center', 'right', 'justify', 'left'];
 		$alignment = array_values(array_intersect($styles, $filter));
 		$alignment = !empty($alignment) ? $alignment[0] : 'left';
@@ -254,8 +292,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseHeader($node, $styles) {
-
+	private function parseHeader($node, $styles)
+    {
 		$block['type'] = 'header';
 		$block['data']['text'] = $this->setInnerHtml($node);
 		$block['data']['level'] = ltrim($node->tagName, $node->tagName[0]);
@@ -271,8 +309,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseParagraph($node, $styles) {
-
+	private function parseParagraph($node, $styles)
+    {
 		$block['type'] = 'paragraph';
 		$block['data']['text'] = $this->setInnerHtml($node);
 		$block['data']['alignment'] = $this->setAlignment($styles);
@@ -287,8 +325,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseList($node, $styles) {
-
+	private function parseList($node, $styles)
+    {
 		$style = in_array('ordered', $styles) ? 'ordered' : 'unordered';
 
 		foreach ($node->childNodes as $childNode) {
@@ -311,8 +349,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseRaw($node, $styles) {
-
+	private function parseRaw($node, $styles)
+    {
 		$block['type'] = 'raw';
 		$block['data']['html'] = $this->setInnerHtml($node);
 
@@ -326,8 +364,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseLinkTool($node, $styles) {
-
+	private function parseLinkTool($node, $styles)
+    {
 		$title = $this->getElementsByClass($node, 'p', $this->prefix.'_title');
 		$title = $title[0]->textContent;
 
@@ -354,8 +392,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseDelimiter($node, $styles) {
-
+	private function parseDelimiter($node, $styles)
+    {
 		$block['type'] = 'delimiter';
 		$block['data'] = [];
 
@@ -369,8 +407,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseAlert($node, $styles) {
-
+	private function parseAlert($node, $styles)
+    {
 		$types = [
 			'primary',
 			'secondary',
@@ -399,8 +437,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseTable($node, $styles) {
-
+	private function parseTable($node, $styles)
+    {
 		$withHeadings = in_array('withheadings', $styles) ? true : false;
 
 		$trs = [];
@@ -446,8 +484,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseCode($node, $styles) {
-
+	private function parseCode($node, $styles)
+    {
 		$block['type'] = 'code';
 		$block['data']['code'] = $node->getElementsByTagName('code')->item(0)->nodeValue;
 
@@ -461,8 +499,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseQuote($node, $styles) {
-
+	private function parseQuote($node, $styles)
+    {
 		$block['type'] = 'quote';
 		$block['data']['text'] = $this->setInnerHtml($node->getElementsByTagName('blockquote')->item(0));
 		$block['data']['caption'] = $this->setInnerHtml($node->getElementsByTagName('figcaption')->item(0));
@@ -478,29 +516,9 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseEmbed($node, $styles) {
-
-		$services = [
-			'facebook',
-			'instagram',
-			'youtube',
-			'twitter',
-			'twitch-video',
-			'miro',
-			'vimeo',
-			'gfycat',
-			'imgur',
-			'vine',
-			'aparat',
-			'yandex-music-track',
-			'yandex-music-album',
-			'yandex-music-playlist',
-			'coub',
-			'codepen',
-			'pinterest',
-			'github'
-		];
-		$dataServices = array_values(array_intersect($styles, $services));
+	private function parseEmbed($node, $styles)
+    {
+		$dataServices = array_values(array_intersect($styles, array_values($this->services)));
 		$dataServices = !empty($dataServices) ? $dataServices[0] : '';
 
 		$block['type'] = 'embed';
@@ -521,8 +539,8 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseImage($node, $styles) {
-
+	private function parseImage($node, $styles)
+    {
 		$withBorder = in_array('withborder', $styles) ? true : false;
 		$withBackground = in_array('withbackground', $styles) ? true : false;
 		$stretched = in_array('stretched', $styles) ? true : false;
@@ -544,13 +562,12 @@ class HtmlParser
 	 * @param array $styles
 	 * @return array
 	 */
-	private function parseWarning($node, $styles) {
-
+	private function parseWarning($node, $styles)
+    {
 		$block['type'] = 'warning';
 		$block['data']['title'] = $node->getElementsByTagName('h4')->item(0)->nodeValue;
 		$block['data']['message'] = $node->getElementsByTagName('p')->item(0)->nodeValue;
 
 		return $block;
 	}
-
 }
