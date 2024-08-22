@@ -7,6 +7,8 @@ use DomXPath;
 
 class HtmlParser
 {
+    use HtmlMutatorTrait;
+    
     /**
      * @var Config
      */
@@ -63,11 +65,17 @@ class HtmlParser
         'github.com' => 'github'
     ];
 
-    public function __construct(string $html)
+    public function __construct(string $html, $needMutations = false)
     {
     	$this->config = new Config();
 
-    	if (empty($html)) throw new ParserException('Empty HTML !');
+    	if (empty($html)) {
+            throw new ParserException('Empty HTML !');
+        }
+        
+        if ($needMutations) {
+            $this->htmlMutator($html);
+        }
 
     	$this->prefix = $this->config->getPrefix();
 
