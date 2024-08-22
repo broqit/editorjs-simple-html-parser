@@ -4,7 +4,7 @@ namespace Durlecode\EJSParser;
 
 trait HtmlMutatorTrait
 {
-    protected static function htmlMutator(&$state): void
+    protected function htmlMutator(&$state): void
     {
         $state = str_replace('</img>', '', $state);
         
@@ -16,28 +16,28 @@ trait HtmlMutatorTrait
         @$dom->loadHTML($html, LIBXML_NOERROR | LIBXML_NOWARNING);
         
         // Мутація заголовків
-        self::mutateHeadings($dom);
-            
-        // Мутація параграфів
-        self::mutateParagraphs($dom);
-            
-        // Мутація таблиць
-        self::mutateTable($dom);
-            
-        // Мутація списків
-        self::mutateLists($dom);
-            
-        // Мутація iframe
-        self::mutateIframes($dom);
-            
-        // Мутація зображень
-        self::mutateImages($dom);
-            
+        $this->mutateHeadings($dom);
+        
         // Мутація спойлерів
-        //self::mutateDetails($dom);
+        // $this->mutateDetails($dom);
         
         // Мутація цитат
-        //self::mutateBlockquotes($dom);
+        $this->mutateBlockquotes($dom);
+            
+        // Мутація параграфів
+        $this->mutateParagraphs($dom);
+            
+        // Мутація таблиць
+        $this->mutateTable($dom);
+            
+        // Мутація списків
+        $this->mutateLists($dom);
+            
+        // Мутація iframe
+        $this->mutateIframes($dom);
+            
+        // Мутація зображень
+        $this->mutateImages($dom);
         
         // Отримуємо вміст без <doctype>, <html>, <head> та <body>
         $bodyContent = '';
@@ -45,12 +45,12 @@ trait HtmlMutatorTrait
             $bodyContent .= $dom->saveHTML($child);
         }
         
-        dd($bodyContent);
+        // dd($bodyContent);
         // Повертаємо лише змінений вміст
         $state = $bodyContent;
     }
     
-    private static function mutateTable($dom)
+    private function mutateTable($dom)
     {
         // Отримуємо tbody
         $tbody = $dom->getElementsByTagName('tbody')->item(0);
@@ -82,7 +82,7 @@ trait HtmlMutatorTrait
         }
     }
     
-    private static function mutateParagraphs($dom)
+    private function mutateParagraphs($dom)
     {
         // Отримуємо всі елементи <p>
         $paragraphs = $dom->getElementsByTagName('p');
@@ -94,7 +94,7 @@ trait HtmlMutatorTrait
         }
     }
     
-    private static function mutateHeadings($dom)
+    private function mutateHeadings($dom)
     {
         // Список заголовків для модифікації
         $headings = ['h2', 'h3', 'h4', 'h5', 'h6'];
@@ -109,7 +109,7 @@ trait HtmlMutatorTrait
         }
     }
     
-    private static function mutateLists($dom)
+    private function mutateLists($dom)
     {
         // Список типів списків для модифікації
         $listTags = ['ul', 'ol'];
@@ -124,11 +124,11 @@ trait HtmlMutatorTrait
         }
     }
     
-    private static function mutateIframes($dom)
+    private function mutateIframes($dom)
     {
         // Отримуємо всі елементи <iframe>
         $iframes = $dom->getElementsByTagName('iframe');
-    
+        
         // Створюємо масив, щоб зберегти елементи для подальшої обробки
         $toProcess = [];
     
@@ -147,8 +147,7 @@ trait HtmlMutatorTrait
             $alt = $iframe->getAttribute('alt');
     
             // Визначаємо сервіс на основі URL
-            $htmlParser = new HtmlParser($iframe->ownerDocument->saveHTML($iframe));
-            $service = $htmlParser->getServiceNameFromUrl($src);
+            $service = $this->getServiceNameFromUrl($src);
     
             // Генеруємо figcaption, якщо це необхідно
             $figcaption = null;
@@ -183,7 +182,7 @@ trait HtmlMutatorTrait
         }
     }
     
-    private static function mutateImages($dom)
+    private function mutateImages($dom)
     {
         // Отримуємо всі елементи <img>
         $images = $dom->getElementsByTagName('img');
@@ -238,7 +237,7 @@ trait HtmlMutatorTrait
         }
     }
     
-    private static function mutateDetails($dom)
+    private function mutateDetails($dom)
     {
         // Отримуємо всі елементи <details>
         $detailsElements = $dom->getElementsByTagName('details');
@@ -279,7 +278,7 @@ trait HtmlMutatorTrait
         }
     }
     
-    private static function mutateBlockquotes($dom)
+    private function mutateBlockquotes($dom)
     {
         // Отримуємо всі елементи <blockquote>
         $blockquotes = $dom->getElementsByTagName('blockquote');
@@ -293,16 +292,50 @@ trait HtmlMutatorTrait
         }
     
         foreach ($toProcess as $blockquote) {
-            // Додаємо клас "prs-quote" до blockquote
-            $existingClass = $blockquote->getAttribute('class');
-            $blockquote->setAttribute('class', trim($existingClass . ' prs-quote'));
+            // Перевіряємо, чи батьківським елементом є <figure>
+            $parentNode = $blockquote->parentNode;
+            $isInFigure = ($parentNode && $parentNode->nodeName === 'figure');
     
-            // Проходимо по всіх дочірніх елементах всередині <blockquote>
-            foreach ($blockquote->childNodes as $childNode) {
-                if ($childNode->nodeType === XML_ELEMENT_NODE) {
-                    // Додаємо клас "prs-quote-content" до кожного дочірнього елемента
-                    $existingChildClass = $childNode->getAttribute('class');
-                    $childNode->setAttribute('class', trim($existingChildClass . ' prs-quote-content'));
+            // Обробка параграфів усередині <blockquote>
+            $paragraphs = $blockquote->getElementsByTagName('p');
+            if ($paragraphs->length > 0) {
+                $combinedText = '';
+    
+                // Об'єднуємо текст із усіх параграфів, додаючи перенос рядка
+                foreach ($paragraphs as $paragraph) {
+                    $combinedText .= $paragraph->textContent . "\n";
+                }
+    
+                // Очищаємо вміст <blockquote>
+                while ($blockquote->hasChildNodes()) {
+                    $blockquote->removeChild($blockquote->firstChild);
+                }
+    
+                // Додаємо об'єднаний текст як єдиний текстовий вузол до <blockquote>
+                $blockquote->appendChild($dom->createTextNode($combinedText));
+            }
+    
+            if (!$isInFigure) {
+                // Якщо <blockquote> не знаходиться в <figure>, обгортаємо його в <figure>
+                $figure = $dom->createElement('figure');
+                $figure->setAttribute('class', 'prs-quote');
+    
+                // Переміщуємо <blockquote> всередину <figure>
+                $parentNode->replaceChild($figure, $blockquote);
+                $figure->appendChild($blockquote);
+    
+            } else {
+                // Якщо <blockquote> вже в <figure>, додаємо клас "prs-quote" до <figure>
+                $figureClass = $parentNode->getAttribute('class');
+                $parentNode->setAttribute('class', trim($figureClass . ' prs-quote'));
+            }
+    
+            // Перевіряємо, чи є всередині <figure> тег <figcaption>
+            if ($isInFigure) {
+                $figcaption = $parentNode->getElementsByTagName('figcaption')->item(0);
+                if ($figcaption) {
+                    // Якщо <figcaption> є, нічого не робимо
+                    continue;
                 }
             }
         }
