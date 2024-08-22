@@ -14,6 +14,18 @@ class Config
      */
     private $version = "2.28.2";
 
+    private $needMutation = false;
+
+    public function isNeedMutation(): bool
+    {
+        return $this->needMutation;
+    }
+
+    public function setNeedMutation(bool $needMutation): void
+    {
+        $this->needMutation = $needMutation;
+    }
+
     public function getPrefix(): string
 	{
 		return $this->prefix;
