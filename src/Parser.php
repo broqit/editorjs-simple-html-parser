@@ -253,6 +253,10 @@ class Parser
 
     private function parseList($block)
     {
+        if (isset($block->data->items[0]->content)) {
+            return $this->parseNestedList($block);
+        }
+
         $class = $this->addClass($block->type, false, $block->data->style);
 
         $list = null;
@@ -268,7 +272,41 @@ class Parser
 
         foreach ($block->data->items as $item) {
             $li = $this->dom->createElement('li');
-            $li->appendChild($this->html5->loadHTMLFragment($item));
+
+            if(isset($item->content)) {
+                $li->appendChild($this->html5->loadHTMLFragment($item->content));
+            } else {
+                $li->appendChild($this->html5->loadHTMLFragment($item));
+            }
+
+            $list->appendChild($li);
+        }
+
+        $list->setAttribute('class', $class);
+
+        $this->dom->appendChild($list);
+    }
+
+    private function parseNestedList($block)
+    {
+        $class = $this->addClass('nested-' . $block->type, false, $block->data->style);
+
+        $list = null;
+
+        switch ($block->data->style) {
+            case 'ordered':
+                $list = $this->dom->createElement('ol');
+                break;
+            default:
+                $list = $this->dom->createElement('ul');
+                break;
+        }
+
+        foreach ($block->data->items as $item) {
+            $li = $this->dom->createElement('li');
+
+            $li->appendChild($this->html5->loadHTMLFragment($item->content));
+
             $list->appendChild($li);
         }
 
