@@ -201,9 +201,9 @@ class Parser
             case 'youtube':
 
                 $attrs = [
-                    'width' => $block->data->width,
-                    'height' => $block->data->height,
-                    'src' => $block->data->embed,
+                    'width' => $block->data->width ?? 720,
+                    'height' => $block->data->height ?? 405,
+                    'src' => $block->data->embed ?? '',
                     'allow' => 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
                     'allowfullscreen' => true
                 ];
