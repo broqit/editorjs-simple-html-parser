@@ -154,7 +154,7 @@ trait HtmlMutatorTrait
             // Генеруємо figcaption, якщо це необхідно
             $figcaption = null;
             if ($parentNode->nodeName === 'figure') {
-                $figcaption = $parentNode->getElementsByTagName('figcaption')->item(0);
+                $figcaption = $parentNode->getElementsByTagName('figcaption')->item(0) ?? null;
             }
 
             if (!$figcaption && $title) {
@@ -171,7 +171,7 @@ trait HtmlMutatorTrait
             $figure->appendChild($iframe);
 
             // Якщо є figcaption, додаємо його до figure
-            if ($figcaption instanceof DOMNode) {
+            if ($figcaption) {
                 $figure->appendChild($figcaption);
             }
 
@@ -207,17 +207,17 @@ trait HtmlMutatorTrait
 
             // Генеруємо figcaption, якщо це необхідно
             $figcaption = null;
+            
             if ($parentNode->nodeName === 'figure') {
-                $figcaptionNode = $parentNode->getElementsByTagName('figcaption')->item(0);
-                $figcaption = $figcaptionNode ? $figcaptionNode->textContent : null;
+                $figcaption = $parentNode->getElementsByTagName('figcaption')->item(0) ?? null;
             }
-
+            
             if (!$figcaption && $title) {
                 $figcaption = $dom->createElement('figcaption', $title);
             } elseif (!$figcaption && $alt) {
                 $figcaption = $dom->createElement('figcaption', $alt);
             }
-
+            
             // Створюємо новий елемент figure
             $figure = $dom->createElement('figure');
             $figure->setAttribute('class', 'prs-image prs_stretched');
@@ -229,7 +229,7 @@ trait HtmlMutatorTrait
             $figure->appendChild($newImg);
 
             // Якщо є figcaption, додаємо його до figure
-            if ($figcaption instanceof DOMNode) {
+            if ($figcaption) {
                 $figure->appendChild($figcaption);
             }
 
