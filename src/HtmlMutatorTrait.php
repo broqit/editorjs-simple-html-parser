@@ -171,7 +171,7 @@ trait HtmlMutatorTrait
             $figure->appendChild($iframe);
 
             // Якщо є figcaption, додаємо його до figure
-            if ($figcaption) {
+            if ($figcaption instanceof DOMNode) {
                 $figure->appendChild($figcaption);
             }
 
@@ -229,7 +229,7 @@ trait HtmlMutatorTrait
             $figure->appendChild($newImg);
 
             // Якщо є figcaption, додаємо його до figure
-            if ($figcaption) {
+            if ($figcaption instanceof DOMNode) {
                 $figure->appendChild($figcaption);
             }
 
